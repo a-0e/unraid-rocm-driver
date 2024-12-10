@@ -1,0 +1,88 @@
+Menu="Utilities"
+Title="ROCm Driver"
+Icon="rocm.png"
+---
+<?php
+// Example WebUI similar to Nvidia’s, adjusted for ROCm.
+$selected_v = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_selected_version");
+shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update');
+$latest_v = shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_latest_version');
+
+$installed_v = shell_exec('modinfo amdgpu | grep "version:" | awk \'{print $2}\'');
+
+$update_check = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update_check");
+
+// In a real scenario, populate these values accordingly from ROCm release info.
+?>
+
+<script>
+if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+}
+function changeVersion(form) {
+    var package = form.drv_version.value;
+    openBox("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh&arg1=update_version&arg2="+package,"Downloading Package",600,800,true);
+    return false;
+}
+</script>
+
+<h1 style="text-align: center;"><span style="color: green;">ROCm Driver Package</span></h1>
+<br/>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;">
+
+<div style="width: 47%; min-width: 700px; max-width: 1260px; flex-wrap: wrap; margin: 10px;">
+<p><b><font size="+1">ROCm Info:</font></b></p>
+<p>Installed ROCm Driver Version:
+<b style="color:green"><?php echo trim($installed_v); ?></b></p>
+<p>Installed GPU(s):<br/>
+<b style="color:green"><?php echo nl2br(shell_exec("lspci | grep 'VGA' | grep 'AMD'")); ?></b></p><br/>
+<?php if (trim($selected_v) === 'latest'): ?>
+	<b><font size="+1">Driver Update Notification</font></b>
+	<form id="s" method="post" >
+		<select name="updata_check_selected" required>
+			<option <?php echo (trim($update_check) == "true") ? 'selected="selected"' : '' ?> value="true"> Enabled</option>
+			<option <?php echo (trim($update_check) == "false") ? 'selected="selected"' : '' ?> value="false"> Disabled</option>
+		</select>
+		<input type="submit" name="changeUPDcheck" value="Change">
+	</form>
+	<p>The Driver Update Notification checks daily for new driver versions and downloads them automatically.</p>
+	<p><b>You must reboot the server to apply a new driver.</b></p><br/>
+<?php endif; ?>
+</div>
+
+<div style="width: 47%; min-width: 700px; max-width: 1260px; margin: 10px;">
+<p><b><font size="+1">Select preferred driver version:</font></b></p>
+<br/>
+<form id="s" method="post" >
+<p><input type="radio" name="drv_version" value="latest" <?php echo (trim($selected_v) == "latest") ? 'checked="checked"' : ''; ?>> Latest: v<?php echo trim($latest_v); ?></p>
+
+<!-- In a real scenario, list available versions retrieved from update scripts -->
+<p><b>Available Versions:</b></p>
+<?php
+$versions = file('/tmp/rocm_driver', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+if ($versions) {
+    rsort($versions, SORT_NATURAL);
+    foreach ($versions as $ver) {
+        echo '<p><input type="radio" name="drv_version" value="'.trim($ver).'" '.((trim($selected_v) == trim($ver))?'checked="checked"':'').'> v'.trim($ver).'</p>';
+    }
+}
+?>
+
+<input type="button" value="Update & Download" onclick="changeVersion(this.form)">
+</form>
+
+<br>
+<p><b>Note:</b> Setting the driver version to 'latest' enables automatic updates if Driver Update Notification is enabled, otherwise you must manually update.</p>
+<p><b>Reboot required after installing a new driver.</b></p>
+</div>
+
+</div>
+
+<?php
+if(isset($_POST['changeUPDcheck'])) {
+	$updata_check_selected = $_POST["updata_check_selected"];
+	shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh change_update_check ".escapeshellarg($updata_check_selected));
+	echo '<script>parent.window.location.reload();</script>';
+}
+?>

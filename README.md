@@ -1,5 +1,5 @@
-# Unraid Nvidia Driver plugin
+# Unraid ROCm Driver plugin
 
-This is the repository for the Unraid Nvidia Driver plugin.
+This plugin installs and manages ROCm drivers for supported AMD GPUs on Unraid servers.
 
-Support Thread: https://forums.unraid.net/topic/98978-plugin-nvidia-driver/
+Support Thread: https://forums.unraid.net/topic/your-support-thread/
