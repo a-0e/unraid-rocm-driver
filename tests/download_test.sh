@@ -22,17 +22,24 @@ test_release_structure() {
     fi
     echo "✓ Release tag format valid: $TAG"
     
-    # Check assets structure
+    # Check for kernel-specific assets
+    KERNEL_V="$(uname -r)"
     ASSETS=$(echo "$LATEST" | jq -r '.assets[].name')
-    if [ -z "$ASSETS" ]; then
-        echo "❌ No assets found in release"
+    if ! echo "$ASSETS" | grep -q "rocm.*${KERNEL_V}.*\.txz"; then
+        echo "❌ No matching kernel assets found"
+        echo "Expected pattern: rocm-*-${KERNEL_V}-*.txz"
+        echo "Found assets:"
+        echo "$ASSETS"
         return 1
     fi
-    echo "✓ Release contains assets"
+    echo "✓ Found matching kernel assets"
     
-    # Display asset naming pattern
-    echo "Current asset names:"
-    echo "$ASSETS"
+    # Check MD5 files exist
+    if ! echo "$ASSETS" | grep -q "\.md5$"; then
+        echo "❌ No MD5 checksums found"
+        return 1
+    fi
+    echo "✓ MD5 checksums present"
     
     return 0
 }
@@ -50,10 +57,16 @@ test_amdgpu_availability() {
     fi
     echo "✓ AMDGPU repository accessible"
     
-    # List available packages
+    # Check for specific version
+    EXPECTED_DEB="amdgpu-install_${ROCM_VERSION}.60401-1_all.deb"
     PACKAGES=$(curl -s "$AMDGPU_URL" | grep -o 'amdgpu-install_[0-9].*_all\.deb')
-    echo "Available AMDGPU packages:"
-    echo "$PACKAGES"
+    if ! echo "$PACKAGES" | grep -q "$EXPECTED_DEB"; then
+        echo "❌ Expected package not found: $EXPECTED_DEB"
+        echo "Available packages:"
+        echo "$PACKAGES"
+        return 1
+    fi
+    echo "✓ Found expected AMDGPU package"
     
     return 0
 }
