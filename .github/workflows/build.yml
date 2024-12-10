@@ -7,9 +7,21 @@ on:
       - 'source/**'
       - '.github/workflows/build.yml'
       - 'source/versions.yml'
+      - 'tests/**'
 
 jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Download Tests
+        run: |
+          chmod +x tests/download_test.sh
+          ./tests/download_test.sh
+
   build:
+    needs: test
     runs-on: self-hosted
     env:
       ROCM_VERSION: "6.0.2"
