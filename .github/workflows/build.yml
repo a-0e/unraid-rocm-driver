@@ -1,47 +1,79 @@
-name: Build and Release
+name: Build ROCm Driver
 
 on:
   workflow_dispatch:
-  
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build.yml'
+      - 'source/versions.yml'
+
 jobs:
-  pre-check:
-    runs-on: self-hosted
-    steps:
-      - name: Environment Check
-        run: |
-          set -x  # Enable command echo
-          echo "PATH=$PATH"
-          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-          echo "RUNNER_TEMP=$RUNNER_TEMP"
-          
-      - name: Directory Setup
-        run: |
-          set -x
-          mkdir -p $RUNNER_TEMP || sudo mkdir -p $RUNNER_TEMP
-          sudo chmod 777 $RUNNER_TEMP
-          ls -la $RUNNER_TEMP
-          
   build:
-    needs: pre-check
     runs-on: self-hosted
+    env:
+      ROCM_VERSION: "6.0.2"
+      BUILD_DIR: "/tmp/rocm-build"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
     steps:
-      - name: Checkout with Debug
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Verify ROCm Version
         run: |
           set -x
-          [ -d "$GITHUB_WORKSPACE" ] || sudo mkdir -p "$GITHUB_WORKSPACE"
-          sudo chmod 777 "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
-          git init
-          git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
-          git fetch --depth=1 origin $GITHUB_SHA
-          git checkout $GITHUB_SHA
+          LATEST_TAG=$(curl -s https://api.github.com/repos/RadeonOpenCompute/ROCm/releases/latest | jq -r .tag_name)
+          if [ "$LATEST_TAG" != "rocm-${ROCM_VERSION}" ]; then
+            echo "Warning: Current ROCm version ${ROCM_VERSION} differs from latest ${LATEST_TAG#rocm-}"
+          fi
           
-      - name: Build with Debug
+      - name: Verify ROCm Environment
         run: |
           set -x
-          cd "$GITHUB_WORKSPACE"
-          bash -x ./source/compile.sh || {
-            echo "Build failed with exit code $?"
-            ls -la
-            exit 1
-          }
+          rocm-smi --version || echo "ROCm tools not found"
+          command -v cmake || echo "cmake not found"
+          command -v git || echo "git not found"
+          command -v gcc || echo "gcc not found"
+          command -v make || echo "make not found"
+          
+      - name: Setup Build Directory
+        run: |
+          set -x
+          sudo rm -rf $BUILD_DIR || true
+          sudo mkdir -p $BUILD_DIR
+          sudo chown -R $USER:$USER $BUILD_DIR
+          
+      - name: Build ROCm Components
+        run: |
+          set -x
+          cd $GITHUB_WORKSPACE
+          chmod +x source/compile.sh
+          ./source/compile.sh
+        
+      - name: Run Tests
+        run: |
+          set -x
+          cd $GITHUB_WORKSPACE
+          chmod +x source/test/test-driver.sh
+          ./source/test/test-driver.sh
+        
+      - name: Create Package
+        if: success()
+        run: |
+          set -x
+          cd $GITHUB_WORKSPACE
+          VERSION=$(date +'%Y.%m.%d')
+          echo "Creating package version: $VERSION"
+          chmod +x source/makepkg-unraid.sh
+          ./source/makepkg-unraid.sh
+          
+      - name: Upload Artifacts
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: rocm-driver-package
+          path: |
+            /tmp/rocm-driver*.txz
+            /tmp/rocm-driver*.md5

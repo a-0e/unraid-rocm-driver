@@ -9,7 +9,8 @@ jobs:
     steps:
       - name: Basic Check
         run: |
-          echo "Hello from runner"
-          pwd
-          whoami
-          date 
+          set -x  # Enable debug output
+          echo "Current directory: $(pwd)"
+          echo "Contents: $(ls -la)"
+          echo "User: $(whoami)"
+          echo "Runner location: $RUNNER_WORKSPACE" 

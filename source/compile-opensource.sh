@@ -1,0 +1,51 @@
+#!/bin/bash
+set -ex
+
+# Source directory for ROCm components
+ROCM_VERSION=${ROCM_VERSION:-"6.0.2"}
+BUILD_DIR=${BUILD_DIR:-"/tmp/rocm-build"}
+INSTALL_DIR=${INSTALL_DIR:-"/usr/local"}
+
+# Ensure clean build directory
+rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+# Build ROCT-Thunk-Interface
+git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCT-Thunk-Interface.git
+cd ROCT-Thunk-Interface
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..
+make -j$(nproc)
+make package
+cd ../..
+
+# Build ROCR Runtime
+git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCR-Runtime.git
+cd ROCR-Runtime/src
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..
+make -j$(nproc)
+make package
+cd ../../..
+
+# Build ROCm OpenCL Runtime
+git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/ROCm-Developer-Tools/ROCclr.git
+git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/ROCm-Developer-Tools/OpenCL-SDK.git
+cd OpenCL-SDK
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..
+make -j$(nproc)
+make package
+
+# Create combined package
+mkdir -p $BUILD_DIR/pkg/usr/local/{lib,include,bin}
+cp -r */build/*.deb $BUILD_DIR/pkg/
+cd $BUILD_DIR/pkg
+for deb in *.deb; do
+    dpkg-deb -x "$deb" ./
+done
+
+cd $BUILD_DIR
+makepkg -l y -c y "../rocm-${ROCM_VERSION}.txz"
+md5sum "../rocm-${ROCM_VERSION}.txz" > "../rocm-${ROCM_VERSION}.txz.md5" 
