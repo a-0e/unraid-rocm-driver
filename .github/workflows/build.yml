@@ -54,7 +54,9 @@ jobs:
         run: |
           set -x
           cd $GITHUB_WORKSPACE
-          sudo -E ./source/compile.sh
+          chmod +x source/compile.sh
+          ls -la source/compile.sh
+          sudo -E bash source/compile.sh
         
       - name: Run Tests
         run: |
