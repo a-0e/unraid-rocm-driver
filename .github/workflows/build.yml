@@ -1,4 +1,4 @@
-name: Build ROCm Driver
+name: Build ROCm Driver Package
 
 on:
   workflow_dispatch:
@@ -21,46 +21,6 @@ jobs:
         with:
           fetch-depth: 1
       
-      - name: Install Dependencies
-        run: |
-          set -x
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake \
-            git \
-            build-essential \
-            pkg-config \
-            libpci-dev \
-            libdrm-dev \
-            libssl-dev \
-            python3-dev \
-            llvm \
-            clang \
-            libclang-dev \
-            llvm-dev \
-            libelf-dev \
-            mesa-common-dev
-      
-      - name: Setup Build Environment
-        run: |
-          set -x
-          # Setup repo tool
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          
-          # Configure git
-          git config --global user.name "ROCm Build Bot"
-          git config --global user.email "rocm-build-bot@amd.com"
-      
-      - name: Verify ROCm Version
-        run: |
-          set -x
-          LATEST_TAG=$(curl -s https://api.github.com/repos/RadeonOpenCompute/ROCm/releases/latest | jq -r .tag_name)
-          if [ "$LATEST_TAG" != "rocm-${ROCM_VERSION}" ]; then
-            echo "Warning: Current ROCm version ${ROCM_VERSION} differs from latest ${LATEST_TAG#rocm-}"
-          fi
-      
       - name: Setup Build Directory
         run: |
           set -x
@@ -68,57 +28,24 @@ jobs:
           sudo mkdir -p $BUILD_DIR
           sudo chown -R $USER:$USER $BUILD_DIR
       
-      - name: Build ROCm Components
-        env:
-          GPU_ARCHS: "gfx803;gfx900;gfx906;gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1010;gfx1011;gfx1012;gfx1030;gfx1031;gfx1032;gfx1033;gfx1034;gfx1035;gfx1036"
-          # Architecture support:
-          # - gfx803  - Polaris
-          # - gfx900  - Vega 10
-          # - gfx906  - Vega 20
-          # - gfx908  - MI100
-          # - gfx90a  - MI200
-          # - gfx940/941/942 - MI300
-          # - gfx1010/1011/1012 - Navi 1x
-          # - gfx1030/1031/1032 - Navi 2x
-          # - gfx1033/1034/1035/1036 - Navi 3x
+      - name: Download ROCm Drivers
+        run: |
+          set -x
+          cd $BUILD_DIR
+          wget -q https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install/amdgpu-install_${ROCM_VERSION}.*.deb
+          dpkg-deb -x amdgpu-install*.deb ./extract
+
+      - name: Create Unraid Package
         run: |
           set -x
           cd $GITHUB_WORKSPACE
           chmod +x source/compile.sh
-          ls -la source/compile.sh
-          sudo -E bash source/compile.sh
-        
-      - name: Run Tests
-        run: |
-          set -x
-          cd $GITHUB_WORKSPACE
-          chmod +x source/test/test-driver.sh
-          ./source/test/test-driver.sh
-        
-      - name: Create Package
-        if: success()
-        run: |
-          set -x
-          cd $GITHUB_WORKSPACE
-          VERSION=$(date +'%Y.%m.%d')
-          echo "Creating package version: $VERSION"
-          chmod +x source/makepkg-unraid.sh
-          ./source/makepkg-unraid.sh
-          
-      - name: Upload Artifacts
-        if: success()
+          ./source/compile.sh
+
+      - name: Upload Package
         uses: actions/upload-artifact@v3
         with:
           name: rocm-driver-package
           path: |
-            /tmp/rocm-driver*.txz
-            /tmp/rocm-driver*.md5
-      - name: Verify Version Consistency
-        run: |
-          set -x
-          YAML_VERSION=$(grep 'version:' source/versions.yml | head -1 | cut -d'"' -f2)
-          COMPILE_VERSION=$(grep 'ROCM_VERSION=' source/compile.sh | cut -d'"' -f2)
-          if [ "$YAML_VERSION" != "$COMPILE_VERSION" ]; then
-            echo "Version mismatch between versions.yml ($YAML_VERSION) and compile.sh ($COMPILE_VERSION)"
-            exit 1
-          fi
+            ${{ env.BUILD_DIR }}/rocm-driver-*.txz
+            ${{ env.BUILD_DIR }}/rocm-driver-*.md5

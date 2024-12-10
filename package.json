@@ -1,16 +1,5 @@
 {
   "name": "unraid-rocm-driver",
   "version": "2024.12.10",
-  "private": true,
-  "renovate": {
-    "extends": [
-      "config:base"
-    ],
-    "packageRules": [
-      {
-        "matchUpdateTypes": ["minor", "patch"],
-        "automerge": true
-      }
-    ]
-  }
+  "private": true
 }

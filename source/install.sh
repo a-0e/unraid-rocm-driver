@@ -1,13 +1,8 @@
 #!/bin/bash
 function install_driver() {
-    echo "Installing ROCm driver..."
-    # Implement driver installation steps
-}
-
-function verify_installation() {
-    echo "Verifying ROCm driver installation..."
-    # Add verification logic
+    /sbin/installpkg "${PACKAGE}"
+    /sbin/depmod -a
+    /sbin/modprobe amdgpu
 }
 
 install_driver
-verify_installation
