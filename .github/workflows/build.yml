@@ -33,7 +33,27 @@ jobs:
             libpci-dev \
             libdrm-dev \
             libssl-dev \
-            python3-dev
+            python3-dev \
+            repo \
+            git-lfs \
+            llvm \
+            clang \
+            libclang-dev \
+            llvm-dev \
+            libelf-dev \
+            mesa-common-dev
+      
+      - name: Setup Build Environment
+        run: |
+          set -x
+          # Setup repo tool
+          mkdir -p ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          
+          # Configure git
+          git config --global user.name "ROCm Build Bot"
+          git config --global user.email "rocm-build-bot@amd.com"
       
       - name: Verify ROCm Version
         run: |
@@ -51,6 +71,18 @@ jobs:
           sudo chown -R $USER:$USER $BUILD_DIR
       
       - name: Build ROCm Components
+        env:
+          GPU_ARCHS: "gfx803;gfx900;gfx906;gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1010;gfx1011;gfx1012;gfx1030;gfx1031;gfx1032;gfx1033;gfx1034;gfx1035;gfx1036"
+          # Architecture support:
+          # - gfx803  - Polaris
+          # - gfx900  - Vega 10
+          # - gfx906  - Vega 20
+          # - gfx908  - MI100
+          # - gfx90a  - MI200
+          # - gfx940/941/942 - MI300
+          # - gfx1010/1011/1012 - Navi 1x
+          # - gfx1030/1031/1032 - Navi 2x
+          # - gfx1033/1034/1035/1036 - Navi 3x
         run: |
           set -x
           cd $GITHUB_WORKSPACE
