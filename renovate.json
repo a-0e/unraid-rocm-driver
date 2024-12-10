@@ -27,9 +27,9 @@
   ],
   "regexManagers": [
     {
-      "fileMatch": ["^source/compile\\.sh$"],
+      "fileMatch": ["^source/versions\\.yml$"],
       "matchStrings": [
-        "ROCM_VERSION=\"(?<currentValue>.*?)\"\\s"
+        "version:\\s*\"(?<currentValue>.*?)\"\\s"
       ],
       "depNameTemplate": "RadeonOpenCompute/ROCm",
       "datasourceTemplate": "github-releases",

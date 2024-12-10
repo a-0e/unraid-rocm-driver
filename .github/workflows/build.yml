@@ -83,3 +83,12 @@ jobs:
           path: |
             /tmp/rocm-driver*.txz
             /tmp/rocm-driver*.md5
+      - name: Verify Version Consistency
+        run: |
+          set -x
+          YAML_VERSION=$(grep 'version:' source/versions.yml | head -1 | cut -d'"' -f2)
+          COMPILE_VERSION=$(grep 'ROCM_VERSION=' source/compile.sh | cut -d'"' -f2)
+          if [ "$YAML_VERSION" != "$COMPILE_VERSION" ]; then
+            echo "Version mismatch between versions.yml ($YAML_VERSION) and compile.sh ($COMPILE_VERSION)"
+            exit 1
+          fi
