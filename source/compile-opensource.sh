@@ -44,21 +44,37 @@ for deb in *.deb; do
 done
 
 # Download and verify AMDGPU package
-AMDGPU_BASE_URL="https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install"
+echo "Checking available AMDGPU packages..."
+# First try versioned repository
+AMDGPU_BASE_URL="https://repo.radeon.com/amdgpu/${ROCM_VERSION}/ubuntu/pool/main/a/amdgpu-install"
 AMDGPU_DEB="amdgpu-install_${ROCM_VERSION}.60401-1_all.deb"
 
-echo "Attempting to download AMDGPU package..."
-if ! wget --spider "${AMDGPU_BASE_URL}/${AMDGPU_DEB}" 2>/dev/null; then
-    echo "Warning: Unable to find exact version, trying alternative URL..."
-    # Try to find the latest version
-    AMDGPU_DEB="amdgpu-install_${ROCM_VERSION%.*}-latest_all.deb"
+# If versioned fails, try latest
+if ! wget -q --spider "${AMDGPU_BASE_URL}/${AMDGPU_DEB}" 2>/dev/null; then
+    echo "Checking latest repository..."
+    AMDGPU_BASE_URL="https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install"
+    
+    # Get list of available packages
+    AVAILABLE_PKGS=$(wget -qO- "${AMDGPU_BASE_URL}/" 2>/dev/null | grep -o 'amdgpu-install_[0-9].*_all\.deb' || true)
+    
+    if [ -n "$AVAILABLE_PKGS" ]; then
+        # Get latest version from available packages
+        AMDGPU_DEB=$(echo "$AVAILABLE_PKGS" | sort -V | tail -n1)
+        echo "Found latest package: ${AMDGPU_DEB}"
+    else
+        echo "Error: Unable to find AMDGPU packages. Continuing with open source build..."
+        AMDGPU_DEB=""
+    fi
 fi
 
-if ! wget -q --show-progress "${AMDGPU_BASE_URL}/${AMDGPU_DEB}"; then
-    echo "Error: Failed to download AMDGPU package. Continuing with open source build..."
-else
-    echo "Successfully downloaded AMDGPU package"
-    dpkg-deb -x "${AMDGPU_DEB}" ./extract
+if [ -n "$AMDGPU_DEB" ]; then
+    echo "Downloading from: ${AMDGPU_BASE_URL}/${AMDGPU_DEB}"
+    if wget -q --show-progress "${AMDGPU_BASE_URL}/${AMDGPU_DEB}"; then
+        echo "Successfully downloaded AMDGPU package"
+        dpkg-deb -x "${AMDGPU_DEB}" ./extract
+    else
+        echo "Error: Failed to download AMDGPU package. Continuing with open source build..."
+    fi
 fi
 
 cd $BUILD_DIR
