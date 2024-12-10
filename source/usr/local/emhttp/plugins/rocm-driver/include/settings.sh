@@ -12,7 +12,7 @@ function init_config() {
 function validate_config() {
     DRIVER_VERSION=$(grep 'driver_version' "$CONFIG_FILE" | cut -d '=' -f2)
     UPDATE_CHECK=$(grep 'update_check' "$CONFIG_FILE" | cut -d '=' -f2)
-    # Additional validation can be added here
+    # Additional validation can be added here if needed
 }
 
 init_config

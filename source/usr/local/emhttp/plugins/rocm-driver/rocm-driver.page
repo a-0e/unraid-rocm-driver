@@ -6,9 +6,7 @@ Icon="rocm.png"
 $selected_v = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_selected_version");
 shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update');
 $latest_v = shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_latest_version');
-
 $installed_v = shell_exec('modinfo amdgpu | grep "version:" | awk \'{print $2}\'');
-
 $update_check = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update_check");
 ?>
 
@@ -29,10 +27,8 @@ function changeVersion(form) {
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;">
 <div style="width: 47%; min-width: 700px; max-width: 1260px; flex-wrap: wrap; margin: 10px;">
 <p><b><font size="+1">ROCm Info:</font></b></p>
-<p>Installed ROCm Driver Version:
-<b style="color:green"><?php echo trim($installed_v); ?></b></p>
-<p>Installed GPU(s):<br/>
-<b style="color:green"><?php echo nl2br(shell_exec("lspci | grep 'VGA' | grep 'AMD'")); ?></b></p><br/>
+<p>Installed ROCm Driver Version: <b style="color:green"><?php echo trim($installed_v); ?></b></p>
+<p>Installed GPU(s):<br/><b style="color:green"><?php echo nl2br(shell_exec("lspci | grep 'VGA' | grep 'AMD'")); ?></b></p><br/>
 <?php if (trim($selected_v) === 'latest'): ?>
 	<b><font size="+1">Driver Update Notification</font></b>
 	<form id="s" method="post" >
@@ -50,7 +46,7 @@ function changeVersion(form) {
 <div style="width: 47%; min-width: 700px; max-width: 1260px; margin: 10px;">
 <p><b><font size="+1">Select preferred driver version:</font></b></p>
 <br/>
-<form id="s" method="post" >
+<form id="s" method="post">
 <p><input type="radio" name="drv_version" value="latest" <?php echo (trim($selected_v) == "latest") ? 'checked="checked"' : ''; ?>> Latest: v<?php echo trim($latest_v); ?></p>
 
 <p><b>Available Versions:</b></p>
