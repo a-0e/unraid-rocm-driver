@@ -1,15 +1,21 @@
 #!/bin/bash
-# Add configuration management:
 CONFIG_FILE="/boot/config/plugins/rocm-driver/settings.cfg"
 
 function init_config() {
-    # Create default configuration
-    # Detect GPU capabilities
-    # Set appropriate defaults
+    # Create default configuration or modify existing if needed
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "first_installation=true" > "$CONFIG_FILE"
+        echo "driver_version=latest" >> "$CONFIG_FILE"
+        echo "update_check=true" >> "$CONFIG_FILE"
+    fi
 }
 
 function validate_config() {
-    # Add configuration validation
-    # Check for conflicts
-    # Verify settings
-} 
+    # Validate settings and ensure no conflicts
+    DRIVER_VERSION=$(grep 'driver_version' "$CONFIG_FILE" | cut -d '=' -f2)
+    UPDATE_CHECK=$(grep 'update_check' "$CONFIG_FILE" | cut -d '=' -f2)
+    # Add more validation if needed
+}
+
+init_config
+validate_config

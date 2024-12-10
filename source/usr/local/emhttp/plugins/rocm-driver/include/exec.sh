@@ -17,7 +17,6 @@ else
   fi
 fi
 if [ ! -s /tmp/rocm_driver ]; then
-  # fallback to installed version if no remote info
   echo -n "$(modinfo amdgpu | grep 'version:' | awk '{print $2}')" > /tmp/rocm_driver
 fi
 }

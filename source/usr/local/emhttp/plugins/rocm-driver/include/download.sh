@@ -25,18 +25,15 @@ if [ ! -d "/boot/config/plugins/rocm-driver/packages/${KERNEL_V%%-*}" ]; then
   mkdir -p "/boot/config/plugins/rocm-driver/packages/${KERNEL_V%%-*}"
 fi
 
-# For simplicity, just pick the latest from GitHub for 'latest' or exact version if set
 if [ "${SET_DRV_V}" == "latest" ]; then
   LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | sort -V | tail -1)"
 else
   LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${SET_DRV_V}" | sort -V | tail -1)"
   if [ -z "${LAT_PACKAGE}" ]; then
-    # fallback to current if not found
     LAT_PACKAGE="${PACKAGE}-${CUR_V}-${KERNEL_V}-1.txz"
   fi
 fi
 
 download
-
 rm -rf $(ls -d /boot/config/plugins/rocm-driver/packages/* 2>/dev/null | grep -v "${KERNEL_V%%-*}")
 rm -f $(ls /boot/config/plugins/rocm-driver/packages/${KERNEL_V%%-*}/* 2>/dev/null | grep -v "$LAT_PACKAGE")

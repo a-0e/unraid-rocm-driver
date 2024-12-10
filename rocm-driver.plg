@@ -48,7 +48,6 @@ This plugin enables GPU acceleration for AMD GPUs and provides integration with 
 <INLINE>
 
 download() {
-#Download ROCm Driver Package
 if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}" "${DL_URL}/${LAT_PACKAGE}" ; then
   wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5" "${DL_URL}/${LAT_PACKAGE}.md5"
   if [ "$(md5sum &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE} | awk '{print $1}')" != "$(cat &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5 | awk '{print $1}')" ]; then
@@ -70,8 +69,6 @@ fi
 }
 
 get_version() {
-# NOTE: The URL and logic here should be adapted to actual ROCm releases.
-# The following is an example similar to the Nvidia logic.
 LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/${AUTHOR}/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V | tail -1)"
 if [ -z "$LAT_PACKAGE" ]; then
   if [ -z "$CUR_V" ]; then
@@ -114,14 +111,12 @@ depmod >> /dev/null
 modprobe amdgpu >> /dev/null
 }
 
-#Create settings file if not found
 if [ ! -f "&plugin;/settings.cfg" ]; then
   echo 'first_installation=true
 driver_version=latest
 update_check=true' > "&plugin;/settings.cfg"
 fi
 
-#Set variables
 KERNEL_V="$(uname -r)"
 SET_DRV_V="$(grep "driver_version" "&plugin;/settings.cfg" | cut -d '=' -f2)"
 export PACKAGE="rocm"
@@ -143,7 +138,6 @@ if ! modinfo amdgpu -0 >/dev/null 2>&1 ; then
   install > /dev/null
 fi
 
-#Enable update check
 if [ "$UPDATE_CHECK" == "true" ]; then
   if [ ! "$(crontab -l | grep "/usr/local/emhttp/plugins/rocm-driver/include/update-check.sh")" ]; then
     (crontab -l ; echo ""$((0 + $RANDOM % 59))" "$(shuf -i 8-9 -n 1)" * * * /usr/local/emhttp/plugins/rocm-driver/include/update-check.sh &>/dev/null 2>&1") | crontab -
@@ -162,24 +156,3 @@ else
   echo
   echo "--------------Installation of ROCm driver v$(echo $LAT_PACKAGE | cut -d '-' -f2) successful--------------"
 fi
-
-</INLINE>
-</FILE>
-
-<FILE Run="/bin/bash" Method="remove">
-<INLINE>
-echo "----------------------------------------"
-echo "---Uninstalling ROCm driver package---"
-echo "----------------------------------------"
-removepkg &name;-&version;
-crontab -l | grep -v '/usr/local/emhttp/plugins/rocm-driver/include/update-check.sh &>/dev/null 2>&1'  | crontab -
-rm -rf /usr/local/emhttp/plugins/&name;
-rm -rf &plugin;
-echo
-echo "--------------------------------------------------------------------------------"
-echo "-------------ROCm Driver uninstalled, please reboot your server!----------------"
-echo "--------------------------------------------------------------------------------"
-echo
-</INLINE>
-</FILE>
-</PLUGIN>

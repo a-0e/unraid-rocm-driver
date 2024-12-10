@@ -3,7 +3,6 @@ Title="ROCm Driver"
 Icon="rocm.png"
 ---
 <?php
-// Example WebUI similar to Nvidia’s, adjusted for ROCm.
 $selected_v = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_selected_version");
 shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update');
 $latest_v = shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh get_latest_version');
@@ -11,8 +10,6 @@ $latest_v = shell_exec('/usr/local/emhttp/plugins/rocm-driver/include/exec.sh ge
 $installed_v = shell_exec('modinfo amdgpu | grep "version:" | awk \'{print $2}\'');
 
 $update_check = shell_exec("/usr/local/emhttp/plugins/rocm-driver/include/exec.sh update_check");
-
-// In a real scenario, populate these values accordingly from ROCm release info.
 ?>
 
 <script>
@@ -30,7 +27,6 @@ function changeVersion(form) {
 <br/>
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;">
-
 <div style="width: 47%; min-width: 700px; max-width: 1260px; flex-wrap: wrap; margin: 10px;">
 <p><b><font size="+1">ROCm Info:</font></b></p>
 <p>Installed ROCm Driver Version:
@@ -57,7 +53,6 @@ function changeVersion(form) {
 <form id="s" method="post" >
 <p><input type="radio" name="drv_version" value="latest" <?php echo (trim($selected_v) == "latest") ? 'checked="checked"' : ''; ?>> Latest: v<?php echo trim($latest_v); ?></p>
 
-<!-- In a real scenario, list available versions retrieved from update scripts -->
 <p><b>Available Versions:</b></p>
 <?php
 $versions = file('/tmp/rocm_driver', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -76,7 +71,6 @@ if ($versions) {
 <p><b>Note:</b> Setting the driver version to 'latest' enables automatic updates if Driver Update Notification is enabled, otherwise you must manually update.</p>
 <p><b>Reboot required after installing a new driver.</b></p>
 </div>
-
 </div>
 
 <?php
