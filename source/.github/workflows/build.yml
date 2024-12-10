@@ -8,15 +8,26 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    env:
+      RUNNER_TEMP: /tmp/runner
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      
+      - name: Setup build environment
+        run: |
+          mkdir -p $RUNNER_TEMP
+          chmod 777 $RUNNER_TEMP
       
       - name: Check ROCm versions
         run: ./source/version_check.sh
       
       - name: Build package
-        run: ./source/compile.sh
+        run: |
+          # Ensure build dependencies are available
+          command -v cmake >/dev/null 2>&1 || { echo "Installing cmake..."; apt-get update && apt-get install -y cmake; }
+          command -v git >/dev/null 2>&1 || { echo "Installing git..."; apt-get update && apt-get install -y git; }
+          ./source/compile.sh
       
       - name: Run tests
         run: ./source/test/test-driver.sh

@@ -1,0 +1,42 @@
+name: Runner Setup Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  check-runner:
+    runs-on: self-hosted
+    steps:
+      - name: Check Required Tools
+        run: |
+          # Check and install essential build tools
+          REQUIRED_PACKAGES="cmake git build-essential python3 curl wget jq"
+          
+          for pkg in $REQUIRED_PACKAGES; do
+            if ! command -v $pkg >/dev/null 2>&1; then
+              echo "Installing $pkg..."
+              apt-get update && apt-get install -y $pkg
+            fi
+          done
+          
+          # Check ROCm build dependencies
+          ROC_DEPS="libpci-dev libdrm-dev libssl-dev python3-dev"
+          for pkg in $ROC_DEPS; do
+            if ! dpkg -l | grep -q "^ii.*$pkg"; then
+              echo "Installing $pkg..."
+              apt-get update && apt-get install -y $pkg
+            fi
+          done
+
+      - name: Verify Runner Environment
+        run: |
+          echo "Checking build environment..."
+          mkdir -p /tmp/runner && chmod 777 /tmp/runner
+          echo "Checking disk space..."
+          df -h
+          echo "Checking memory..."
+          free -h
+          echo "Checking CPU..."
+          nproc 

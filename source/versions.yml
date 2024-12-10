@@ -1,7 +1,7 @@
 dependencies:
   rocm:
-    version: "5.7.0"
+    version: "6.0.2"
     repository: "RadeonOpenCompute/ROCm"
   amdgpu:
-    version: "5.7.0"
+    version: "6.0.2"
     repository: "RadeonOpenCompute/AMDGPU"
