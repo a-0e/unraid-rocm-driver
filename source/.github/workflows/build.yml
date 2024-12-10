@@ -1,0 +1,28 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily check
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Check ROCm versions
+        run: ./source/version_check.sh
+      
+      - name: Build package
+        run: ./source/compile.sh
+      
+      - name: Run tests
+        run: ./source/test/test-driver.sh
+      
+      - name: Create release
+        if: success()
+        run: ./source/release.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

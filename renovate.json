@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":prHourlyLimit4",
+    ":rebaseStalePrs",
+    ":automergeMinor",
+    ":separateMajorReleases"
+  ],
+  "labels": ["dependencies", "automated"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^rocm"],
+      "groupName": "ROCm packages",
+      "automerge": true,
+      "schedule": ["at any time"],
+      "versioning": "semver",
+      "stabilityDays": 3,
+      "prCreation": "immediate",
+      "reviewers": ["a-0e"],
+      "assignees": ["a-0e"]
+    }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["^source/compile\\.sh$"],
+      "matchStrings": [
+        "ROCM_VERSION=\"(?<currentValue>.*?)\"\\s"
+      ],
+      "depNameTemplate": "RadeonOpenCompute/ROCm",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.plg$"],
+      "matchStrings": [
+        "<!ENTITY version\\s+\"(?<currentValue>.*?)\">"
+      ],
+      "depNameTemplate": "unraid-rocm-driver",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 4,
+  "branchConcurrentLimit": 5,
+  "commitMessagePrefix": "chore(deps): ",
+  "commitBody": "Signed-off-by: renovate[bot] <renovate[bot]@users.noreply.github.com>",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["a-0e"]
+  }
+} 
