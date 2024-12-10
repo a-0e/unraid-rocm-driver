@@ -1,0 +1,42 @@
+name: Runner Configuration Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  check-config:
+    runs-on: self-hosted
+    steps:
+      - name: Check Runner Configuration
+        run: |
+          echo "=== Runner Configuration ==="
+          echo "Runner Version: $(gh --version 2>/dev/null || echo 'gh CLI not installed')"
+          echo "Docker Version: $(docker --version 2>/dev/null || echo 'Docker not installed')"
+          echo "ROCm Version: $(rocm-smi --version 2>/dev/null || echo 'ROCm not installed')"
+          echo "GPU Status: $(rocm-smi 2>/dev/null || echo 'No GPU info available')"
+          echo ""
+          echo "=== System Resources ==="
+          echo "CPU Cores: $(nproc)"
+          echo "Memory:"
+          free -h
+          echo ""
+          echo "Disk Space:"
+          df -h
+          
+      - name: Check Network Connectivity
+        run: |
+          echo "=== Network Connectivity ==="
+          curl -Is https://github.com | head -1
+          curl -Is https://api.github.com | head -1
+          
+      - name: Check Runner Service
+        run: |
+          echo "=== Runner Service Status ==="
+          if systemctl is-active actions.runner.* >/dev/null 2>&1; then
+            echo "Runner service is active"
+            systemctl status actions.runner.* | grep Active
+          else
+            echo "Runner service not found or not running"
+          fi 

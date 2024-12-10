@@ -5,34 +5,72 @@ on:
     branches: [ master ]
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch:  # Added manual trigger
 
 jobs:
   build:
     runs-on: self-hosted
     env:
       RUNNER_TEMP: /tmp/runner
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
     steps:
+      - name: Runner Status Check
+        run: |
+          echo "Runner Status:"
+          echo "Hostname: $(hostname)"
+          echo "Working Directory: $(pwd)"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+          echo "Runner OS: $(uname -a)"
+          echo "Runner User: $(whoami)"
+      
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          
+      - name: Verify Runner Labels
+        run: |
+          echo "Available Labels:"
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runners" | jq -r '.runners[].labels[].name'
       
       - name: Setup build environment
         run: |
           mkdir -p $RUNNER_TEMP
           chmod 777 $RUNNER_TEMP
+          echo "Build environment ready"
+          
+      - name: Check Dependencies
+        run: |
+          echo "Checking build dependencies..."
+          for cmd in cmake git make gcc g++ python3 curl wget jq; do
+            if ! command -v $cmd &> /dev/null; then
+              echo "❌ Missing: $cmd"
+            else
+              echo "✓ Found: $cmd ($(which $cmd))"
+            fi
+          done
       
       - name: Check ROCm versions
-        run: ./source/version_check.sh
+        run: |
+          echo "Running version check..."
+          ./source/version_check.sh || {
+            echo "Version check failed with exit code $?"
+            exit 1
+          }
       
       - name: Build package
         run: |
-          command -v cmake >/dev/null 2>&1 || { echo "Installing cmake..."; apt-get update && apt-get install -y cmake; }
-          command -v git >/dev/null 2>&1 || { echo "Installing git..."; apt-get update && apt-get install -y git; }
+          echo "Starting build process..."
           ./source/compile.sh
-      
+        
       - name: Run tests
-        run: ./source/test/test-driver.sh
-      
+        run: |
+          echo "Running tests..."
+          ./source/test/test-driver.sh
+        
       - name: Create release
         if: success()
-        run: ./source/release.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Creating release..."
+          ./source/release.sh
