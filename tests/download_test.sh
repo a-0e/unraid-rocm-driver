@@ -8,8 +8,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Import functions to test (mock sensitive paths)
-source source/usr/local/emhttp/plugins/rocm-driver/include/download.sh
+# Mock environment and config
+mkdir -p "$TEST_DIR/boot/config/plugins/rocm-driver"
+cat > "$TEST_DIR/boot/config/plugins/rocm-driver/settings.cfg" << EOF
+driver_version=latest
+update_check=true
+EOF
+
+# Mock environment variables used by download.sh
+export KERNEL_V="$(uname -r)"
+export SET_DRV_V="latest"
+export PACKAGE="rocm"
+export DL_URL="https://github.com/a-0e/unraid-rocm-driver/releases/download/${KERNEL_V}"
+export CUR_V="6.0.2"
 
 # Test cases
 test_amdgpu_download() {
@@ -47,7 +58,6 @@ test_github_releases() {
     echo "Testing GitHub releases access..."
     
     # Test GitHub API access
-    KERNEL_V="$(uname -r)"
     API_URL="https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V}"
     if ! curl --output /dev/null --silent --head --fail "$API_URL"; then
         echo "❌ GitHub API test failed: $API_URL"
@@ -66,8 +76,28 @@ test_github_releases() {
     return 0
 }
 
+test_download_function() {
+    echo "Testing download function..."
+    
+    # Mock the download paths
+    mkdir -p "$TEST_DIR/boot/config/plugins/rocm-driver/packages/${KERNEL_V%%-*}"
+    
+    # Source the download script with mocked environment
+    PLUGIN_PATH="$TEST_DIR" source source/usr/local/emhttp/plugins/rocm-driver/include/download.sh
+    
+    # Test the download function
+    if ! download; then
+        echo "❌ Download function failed"
+        return 1
+    fi
+    echo "✓ Download function succeeded"
+    
+    return 0
+}
+
 # Run tests
 echo "=== Running Download Tests ==="
 test_amdgpu_download
 test_github_releases
+test_download_function
 echo "=== Tests Complete ===" 
