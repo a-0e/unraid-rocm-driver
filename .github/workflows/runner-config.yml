@@ -2,41 +2,42 @@ name: Runner Configuration Check
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'
 
 jobs:
-  check-config:
+  diagnose:
     runs-on: self-hosted
     steps:
-      - name: Check Runner Configuration
+      - name: Check Runner Process
         run: |
-          echo "=== Runner Configuration ==="
-          echo "Runner Version: $(gh --version 2>/dev/null || echo 'gh CLI not installed')"
-          echo "Docker Version: $(docker --version 2>/dev/null || echo 'Docker not installed')"
-          echo "ROCm Version: $(rocm-smi --version 2>/dev/null || echo 'ROCm not installed')"
-          echo "GPU Status: $(rocm-smi 2>/dev/null || echo 'No GPU info available')"
-          echo ""
+          echo "=== Process Check ==="
+          ps aux | grep actions-runner || echo "No runner process found"
+          echo "Runner Directory Contents:"
+          ls -la ~/actions-runner/ || echo "Runner directory not found"
+          
+      - name: Check Permissions
+        run: |
+          echo "=== Permission Check ==="
+          echo "Current User: $(whoami)"
+          echo "User Groups: $(groups)"
+          echo "Runner Directory Permissions:"
+          ls -la ~/actions-runner/
+          echo "Working Directory Permissions:"
+          ls -la .
+          
+      - name: Check Logs
+        run: |
+          echo "=== Recent Runner Logs ==="
+          tail -n 50 ~/actions-runner/_diag/*.log || echo "No log files found"
+          
+      - name: Check GitHub Connection
+        run: |
+          echo "=== GitHub Connectivity ==="
+          curl -v https://api.github.com/repos/${{ github.repository }} 2>&1 | grep "HTTP/"
+          
+      - name: Check System Load
+        run: |
           echo "=== System Resources ==="
-          echo "CPU Cores: $(nproc)"
-          echo "Memory:"
+          uptime
           free -h
-          echo ""
-          echo "Disk Space:"
-          df -h
-          
-      - name: Check Network Connectivity
-        run: |
-          echo "=== Network Connectivity ==="
-          curl -Is https://github.com | head -1
-          curl -Is https://api.github.com | head -1
-          
-      - name: Check Runner Service
-        run: |
-          echo "=== Runner Service Status ==="
-          if systemctl is-active actions.runner.* >/dev/null 2>&1; then
-            echo "Runner service is active"
-            systemctl status actions.runner.* | grep Active
-          else
-            echo "Runner service not found or not running"
-          fi 
+          df -h /
+          echo "Process Count: $(ps aux | wc -l)"

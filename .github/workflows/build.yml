@@ -1,76 +1,47 @@
 name: Build and Release
 
 on:
-  push:
-    branches: [ master ]
-  schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:  # Added manual trigger
-
+  workflow_dispatch:
+  
 jobs:
-  build:
+  pre-check:
     runs-on: self-hosted
-    env:
-      RUNNER_TEMP: /tmp/runner
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
     steps:
-      - name: Runner Status Check
+      - name: Environment Check
         run: |
-          echo "Runner Status:"
-          echo "Hostname: $(hostname)"
-          echo "Working Directory: $(pwd)"
-          echo "GitHub Workspace: $GITHUB_WORKSPACE"
-          echo "Runner OS: $(uname -a)"
-          echo "Runner User: $(whoami)"
-      
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+          set -x  # Enable command echo
+          echo "PATH=$PATH"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          echo "RUNNER_TEMP=$RUNNER_TEMP"
           
-      - name: Verify Runner Labels
+      - name: Directory Setup
         run: |
-          echo "Available Labels:"
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runners" | jq -r '.runners[].labels[].name'
-      
-      - name: Setup build environment
-        run: |
-          mkdir -p $RUNNER_TEMP
-          chmod 777 $RUNNER_TEMP
-          echo "Build environment ready"
+          set -x
+          mkdir -p $RUNNER_TEMP || sudo mkdir -p $RUNNER_TEMP
+          sudo chmod 777 $RUNNER_TEMP
+          ls -la $RUNNER_TEMP
           
-      - name: Check Dependencies
+  build:
+    needs: pre-check
+    runs-on: self-hosted
+    steps:
+      - name: Checkout with Debug
         run: |
-          echo "Checking build dependencies..."
-          for cmd in cmake git make gcc g++ python3 curl wget jq; do
-            if ! command -v $cmd &> /dev/null; then
-              echo "❌ Missing: $cmd"
-            else
-              echo "✓ Found: $cmd ($(which $cmd))"
-            fi
-          done
-      
-      - name: Check ROCm versions
+          set -x
+          [ -d "$GITHUB_WORKSPACE" ] || sudo mkdir -p "$GITHUB_WORKSPACE"
+          sudo chmod 777 "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
+          git init
+          git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          git fetch --depth=1 origin $GITHUB_SHA
+          git checkout $GITHUB_SHA
+          
+      - name: Build with Debug
         run: |
-          echo "Running version check..."
-          ./source/version_check.sh || {
-            echo "Version check failed with exit code $?"
+          set -x
+          cd "$GITHUB_WORKSPACE"
+          bash -x ./source/compile.sh || {
+            echo "Build failed with exit code $?"
+            ls -la
             exit 1
           }
-      
-      - name: Build package
-        run: |
-          echo "Starting build process..."
-          ./source/compile.sh
-        
-      - name: Run tests
-        run: |
-          echo "Running tests..."
-          ./source/test/test-driver.sh
-        
-      - name: Create release
-        if: success()
-        run: |
-          echo "Creating release..."
-          ./source/release.sh
