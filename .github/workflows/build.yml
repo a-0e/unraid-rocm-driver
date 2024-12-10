@@ -21,6 +21,20 @@ jobs:
         with:
           fetch-depth: 1
       
+      - name: Install Dependencies
+        run: |
+          set -x
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            git \
+            build-essential \
+            pkg-config \
+            libpci-dev \
+            libdrm-dev \
+            libssl-dev \
+            python3-dev
+      
       - name: Verify ROCm Version
         run: |
           set -x
@@ -28,29 +42,19 @@ jobs:
           if [ "$LATEST_TAG" != "rocm-${ROCM_VERSION}" ]; then
             echo "Warning: Current ROCm version ${ROCM_VERSION} differs from latest ${LATEST_TAG#rocm-}"
           fi
-          
-      - name: Verify ROCm Environment
-        run: |
-          set -x
-          rocm-smi --version || echo "ROCm tools not found"
-          command -v cmake || echo "cmake not found"
-          command -v git || echo "git not found"
-          command -v gcc || echo "gcc not found"
-          command -v make || echo "make not found"
-          
+      
       - name: Setup Build Directory
         run: |
           set -x
           sudo rm -rf $BUILD_DIR || true
           sudo mkdir -p $BUILD_DIR
           sudo chown -R $USER:$USER $BUILD_DIR
-          
+      
       - name: Build ROCm Components
         run: |
           set -x
           cd $GITHUB_WORKSPACE
-          chmod +x source/compile.sh
-          ./source/compile.sh
+          sudo -E ./source/compile.sh
         
       - name: Run Tests
         run: |
