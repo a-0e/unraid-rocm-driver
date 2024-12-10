@@ -43,6 +43,24 @@ for deb in *.deb; do
     dpkg-deb -x "$deb" ./
 done
 
+# Download and verify AMDGPU package
+AMDGPU_BASE_URL="https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install"
+AMDGPU_DEB="amdgpu-install_${ROCM_VERSION}.60401-1_all.deb"
+
+echo "Attempting to download AMDGPU package..."
+if ! wget --spider "${AMDGPU_BASE_URL}/${AMDGPU_DEB}" 2>/dev/null; then
+    echo "Warning: Unable to find exact version, trying alternative URL..."
+    # Try to find the latest version
+    AMDGPU_DEB="amdgpu-install_${ROCM_VERSION%.*}-latest_all.deb"
+fi
+
+if ! wget -q --show-progress "${AMDGPU_BASE_URL}/${AMDGPU_DEB}"; then
+    echo "Error: Failed to download AMDGPU package. Continuing with open source build..."
+else
+    echo "Successfully downloaded AMDGPU package"
+    dpkg-deb -x "${AMDGPU_DEB}" ./extract
+fi
+
 cd $BUILD_DIR
 makepkg -l y -c y "../rocm-${ROCM_VERSION}.txz"
 md5sum "../rocm-${ROCM_VERSION}.txz" > "../rocm-${ROCM_VERSION}.txz.md5"
