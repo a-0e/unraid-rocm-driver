@@ -24,7 +24,6 @@ jobs:
       
       - name: Build package
         run: |
-          # Ensure build dependencies are available
           command -v cmake >/dev/null 2>&1 || { echo "Installing cmake..."; apt-get update && apt-get install -y cmake; }
           command -v git >/dev/null 2>&1 || { echo "Installing git..."; apt-get update && apt-get install -y git; }
           ./source/compile.sh

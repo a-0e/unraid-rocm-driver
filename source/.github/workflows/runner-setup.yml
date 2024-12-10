@@ -11,9 +11,7 @@ jobs:
     steps:
       - name: Check Required Tools
         run: |
-          # Check and install essential build tools
           REQUIRED_PACKAGES="cmake git build-essential python3 curl wget jq"
-          
           for pkg in $REQUIRED_PACKAGES; do
             if ! command -v $pkg >/dev/null 2>&1; then
               echo "Installing $pkg..."
@@ -21,7 +19,6 @@ jobs:
             fi
           done
           
-          # Check ROCm build dependencies
           ROC_DEPS="libpci-dev libdrm-dev libssl-dev python3-dev"
           for pkg in $ROC_DEPS; do
             if ! dpkg -l | grep -q "^ii.*$pkg"; then
@@ -39,4 +36,4 @@ jobs:
           echo "Checking memory..."
           free -h
           echo "Checking CPU..."
-          nproc 
+          nproc

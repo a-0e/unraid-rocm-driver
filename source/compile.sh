@@ -4,11 +4,9 @@ BUILD_DIR="/tmp/rocm-build"
 INSTALL_DIR="/usr/local"
 
 function build_rocm() {
-    # Create and enter build directory
     mkdir -p "$BUILD_DIR"
     cd "$BUILD_DIR"
     
-    # Install build dependencies
     apt-get update && apt-get install -y \
         cmake \
         pkg-config \
@@ -19,7 +17,6 @@ function build_rocm() {
         build-essential \
         git
     
-    # Clone and build ROCm components
     git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCT-Thunk-Interface.git
     cd ROCT-Thunk-Interface
     mkdir build && cd build
@@ -28,7 +25,6 @@ function build_rocm() {
     make package
     cd ../..
 
-    # Build ROCR Runtime
     git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCR-Runtime.git
     cd ROCR-Runtime/src
     mkdir build && cd build
@@ -37,7 +33,6 @@ function build_rocm() {
     make package
     cd ../../..
 
-    # Build ROCm OpenCL Runtime
     git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/ROCm-Developer-Tools/ROCclr.git
     git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/ROCm-Developer-Tools/OpenCL-SDK.git
     cd OpenCL-SDK
@@ -52,18 +47,15 @@ function create_package() {
     cd "$BUILD_DIR"
     mkdir -p pkg/usr/local/{lib,include,bin}
     
-    # Copy built files to package directory
     cp -r ROCT-Thunk-Interface/build/*.deb pkg/
     cp -r ROCR-Runtime/src/build/*.deb pkg/
     cp -r OpenCL-SDK/build/*.deb pkg/
     
-    # Create combined package
     cd pkg
     for deb in *.deb; do
         dpkg-deb -x "$deb" ./
     done
     
-    # Create final txz package
     cd ..
     makepkg -l y -c y "../rocm-${ROCM_VERSION}.txz"
     md5sum "../rocm-${ROCM_VERSION}.txz" > "../rocm-${ROCM_VERSION}.txz.md5"

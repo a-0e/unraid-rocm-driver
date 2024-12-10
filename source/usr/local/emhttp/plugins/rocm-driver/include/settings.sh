@@ -2,7 +2,6 @@
 CONFIG_FILE="/boot/config/plugins/rocm-driver/settings.cfg"
 
 function init_config() {
-    # Create default configuration or modify existing if needed
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "first_installation=true" > "$CONFIG_FILE"
         echo "driver_version=latest" >> "$CONFIG_FILE"
@@ -11,7 +10,6 @@ function init_config() {
 }
 
 function validate_config() {
-    # Validate settings and ensure no conflicts
     DRIVER_VERSION=$(grep 'driver_version' "$CONFIG_FILE" | cut -d '=' -f2)
     UPDATE_CHECK=$(grep 'update_check' "$CONFIG_FILE" | cut -d '=' -f2)
     # Additional validation can be added here
