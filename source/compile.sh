@@ -11,19 +11,43 @@ function build_rocm() {
     mkdir -p "$WORKSPACE_DIR"
     cd "$WORKSPACE_DIR"
 
-    # Initialize repo tool for ROCm source
-    ~/bin/repo init -u https://github.com/ROCm/ROCm.git -b roc-${ROCM_VERSION}.x -m tools/rocm-build/rocm-${ROCM_VERSION}.xml
-    ~/bin/repo sync
+    # Clone main ROCm repository
+    git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCm.git
+    cd ROCm
 
-    # Build core components
-    make -f ROCm/tools/rocm-build/ROCm.mk -j $(nproc) rocm-core
-    
-    # Build runtime components with all architectures
-    AMDGPU_TARGETS="${GPU_ARCHS}" make -f ROCm/tools/rocm-build/ROCm.mk -j $(nproc) rocm-runtime
-    
+    # Build components directly
+    # ROCT-Thunk-Interface (HSA Runtime)
+    git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCT-Thunk-Interface.git
+    cd ROCT-Thunk-Interface
+    mkdir build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..
+    make -j$(nproc)
+    DESTDIR=./install make install
+    cd ../..
+
+    # ROCR Runtime
+    git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/RadeonOpenCompute/ROCR-Runtime.git
+    cd ROCR-Runtime/src
+    mkdir build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+          -DAMDGPU_TARGET_TRIPLE="${GPU_ARCHS}" ..
+    make -j$(nproc)
+    DESTDIR=./install make install
+    cd ../../..
+
+    # ROCm OpenCL Runtime
+    git clone --depth 1 -b rocm-${ROCM_VERSION} https://github.com/ROCm-Developer-Tools/ROCclr.git
+    cd ROCclr
+    mkdir build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+          -DAMDGPU_TARGET_TRIPLE="${GPU_ARCHS}" ..
+    make -j$(nproc)
+    DESTDIR=./install make install
+    cd ../..
+
     # Create final package
     mkdir -p "$BUILD_DIR/pkg/usr/local"
-    cp -r out/*/deb/* "$BUILD_DIR/pkg/"
+    find . -path "*/install/usr/local/*" -exec cp -r {} "$BUILD_DIR/pkg/usr/local/" \;
     cd "$BUILD_DIR/pkg"
     makepkg -l y -c y "$BUILD_DIR/rocm-${ROCM_VERSION}.txz"
     cd ..

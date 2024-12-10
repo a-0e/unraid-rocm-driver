@@ -34,8 +34,6 @@ jobs:
             libdrm-dev \
             libssl-dev \
             python3-dev \
-            repo \
-            git-lfs \
             llvm \
             clang \
             libclang-dev \
