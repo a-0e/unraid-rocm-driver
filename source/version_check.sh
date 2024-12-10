@@ -1,7 +1,6 @@
 #!/bin/bash
-set -euo pipefail  # Fail on errors and undefined variables
+set -euo pipefail
 
-# Configure logging
 LOGFILE="/var/log/rocm-driver-update.log"
 exec 1> >(tee -a "$LOGFILE") 2>&1
 
@@ -13,7 +12,6 @@ function error_handler() {
     local line_no=$1
     local error_code=$2
     log "ERROR: Command failed at line ${line_no} with exit code ${error_code}"
-    # Notify via GitHub API about failure
     notify_failure "Update process failed at line ${line_no}"
 }
 
@@ -39,20 +37,17 @@ function validate_version() {
 }
 
 function check_rocm_versions() {
-    # Ensure versions.yml exists
     if [[ ! -f "source/versions.yml" ]]; then
         log "ERROR: versions.yml not found"
         exit 1
     fi
 
-    # Load current versions with error checking
     CURRENT_ROCM=$(grep "version:" source/versions.yml | head -1 | cut -d'"' -f2)
     if [[ -z "$CURRENT_ROCM" ]]; then
         log "ERROR: Could not determine current ROCm version"
         exit 1
     fi
     
-    # Check latest ROCm version with retry logic
     local max_attempts=3
     local attempt=1
     while [[ $attempt -le $max_attempts ]]; do
@@ -70,19 +65,16 @@ function check_rocm_versions() {
         exit 1
     fi
 
-    # Validate versions
     if ! validate_version "$CURRENT_ROCM" || ! validate_version "$LATEST_ROCM"; then
         exit 1
-    }
+    fi
 
     if [[ "$LATEST_ROCM" != "$CURRENT_ROCM" ]]; then
         log "New ROCm version available: $LATEST_ROCM (current: $CURRENT_ROCM)"
         
-        # Create backup of files before modification
         cp source/versions.yml source/versions.yml.bak
         cp source/compile.sh source/compile.sh.bak
         
-        # Update files with error checking
         if ! sed -i.bak "s/version: \"$CURRENT_ROCM\"/version: \"$LATEST_ROCM\"/" source/versions.yml; then
             log "ERROR: Failed to update versions.yml"
             restore_backups
@@ -93,7 +85,7 @@ function check_rocm_versions() {
             log "ERROR: Failed to update compile.sh"
             restore_backups
             exit 1
-        }
+        fi
         
         create_update_pr "$LATEST_ROCM"
     else
@@ -112,13 +104,11 @@ function create_update_pr() {
     local branch="update-rocm-${new_version}"
     local title="Update ROCm to version ${new_version}"
     
-    # Verify GitHub token
     if [[ -z "${GITHUB_TOKEN:-}" ]]; then
         log "ERROR: GITHUB_TOKEN is not set"
         exit 1
     fi
 
-    # Create branch with error checking
     local response
     response=$(curl -s -w "%{http_code}" -X POST \
         -H "Authorization: token $GITHUB_TOKEN" \
@@ -134,9 +124,8 @@ function create_update_pr() {
         log "ERROR: Failed to create branch (HTTP $http_code)"
         log "Response: ${response:0:-3}"
         exit 1
-    }
+    fi
 
-    # Create PR with error checking
     response=$(curl -s -w "%{http_code}" -X POST \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Content-Type: application/json" \
@@ -153,14 +142,13 @@ function create_update_pr() {
         log "ERROR: Failed to create PR (HTTP $http_code)"
         log "Response: ${response:0:-3}"
         exit 1
-    }
+    fi
 
     log "Successfully created PR for ROCm $new_version"
 }
 
 function notify_failure() {
     local message=$1
-    # Create issue for failed update
     curl -s -X POST \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Content-Type: application/json" \
@@ -172,8 +160,7 @@ function notify_failure() {
         "https://api.github.com/repos/a-0e/unraid-rocm-driver/issues"
 }
 
-# Main execution
 log "Starting ROCm version check"
 check_dependencies
 check_rocm_versions
-log "Version check completed successfully" 
+log "Version check completed successfully"

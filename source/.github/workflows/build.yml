@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron: '0 0 * * *'  # Daily check
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -25,4 +25,4 @@ jobs:
         if: success()
         run: ./source/release.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

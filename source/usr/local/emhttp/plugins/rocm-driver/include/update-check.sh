@@ -17,7 +17,7 @@ if wget -q -nc --show-progress --progress=bar:force:noscroll -O "/boot/config/pl
   crontab -l | grep -v '/usr/local/emhttp/plugins/rocm-driver/include/update-check.sh' | crontab -
 else
   /usr/local/emhttp/plugins/dynamix/scripts/notify -e "ROCm Driver" -d "Found new ROCm Driver v$(echo $LAT_PACKAGE | cut -d '-' -f2) but download failed! Please install manually." -i "alert"
-  crontab -l | grep -v '/usr/local/emhttp/plugins/rocm-driver/include/update-check.sh' | crontab -
+  crontab -l | grep -v '/usr/local/emhttp/plugins/rocm-driver/include/update-check.sh'  | crontab -
   exit 1
 fi
 }

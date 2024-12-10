@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Validate version format
 function validate_version() {
     if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<< "$1"; then
         echo "ERROR: Invalid version format: $1"
@@ -10,28 +9,24 @@ function validate_version() {
     return 0
 }
 
-# Check versions.yml syntax
 if ! yamllint source/versions.yml; then
     echo "ERROR: versions.yml failed validation"
     exit 1
 fi
 
-# Validate versions in versions.yml
 ROCM_VERSION=$(grep "version:" source/versions.yml | head -1 | cut -d'"' -f2)
 if ! validate_version "$ROCM_VERSION"; then
     exit 1
 fi
 
-# Check compile.sh syntax
 if ! shellcheck source/compile.sh; then
     echo "ERROR: compile.sh failed shellcheck"
     exit 1
 fi
 
-# Validate JSON files
 for json_file in $(git ls-files "*.json"); do
     if ! jq empty "$json_file"; then
         echo "ERROR: Invalid JSON in $json_file"
         exit 1
     fi
-done 
+done

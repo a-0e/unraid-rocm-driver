@@ -14,7 +14,7 @@ function validate_config() {
     # Validate settings and ensure no conflicts
     DRIVER_VERSION=$(grep 'driver_version' "$CONFIG_FILE" | cut -d '=' -f2)
     UPDATE_CHECK=$(grep 'update_check' "$CONFIG_FILE" | cut -d '=' -f2)
-    # Add more validation if needed
+    # Additional validation can be added here
 }
 
 init_config
