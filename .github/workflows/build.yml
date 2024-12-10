@@ -32,8 +32,9 @@ jobs:
         run: |
           set -x
           cd $BUILD_DIR
-          wget -q https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install/amdgpu-install_${ROCM_VERSION}.*.deb
-          dpkg-deb -x amdgpu-install*.deb ./extract
+          AMDGPU_DEB="amdgpu-install_${ROCM_VERSION}.60401-1_all.deb"
+          wget -q "https://repo.radeon.com/amdgpu/latest/ubuntu/pool/main/a/amdgpu-install/${AMDGPU_DEB}"
+          dpkg-deb -x "${AMDGPU_DEB}" ./extract
 
       - name: Create Unraid Package
         run: |
