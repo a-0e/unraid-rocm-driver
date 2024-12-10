@@ -2,7 +2,7 @@
 KERNEL_V="$(uname -r)"
 SET_DRV_V="$(cat /boot/config/plugins/rocm-driver/settings.cfg | grep 'driver_version' | cut -d '=' -f2)"
 PACKAGE="rocm"
-DL_URL="https://github.com/yourname/unraid-rocm-driver/releases/download/${KERNEL_V}"
+DL_URL="https://github.com/a-0e/unraid-rocm-driver/releases/download/${KERNEL_V}"
 INSTALLED_V="$(modinfo amdgpu | grep 'version:' | awk '{print $2}')"
 
 download() {
@@ -26,7 +26,7 @@ if [ "${SET_DRV_V}" != "latest" ]; then
   exit 0
 fi
 
-LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V | tail -1)"
+LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V | tail -1)"
 if [ -z "$LAT_PACKAGE" ]; then
   logger "ROCm-Driver-Plugin: Automatic update check failed, can't get latest version number!"
   exit 1

@@ -6,13 +6,13 @@ PACKAGE="rocm"
 CURENTTIME=$(date +%s)
 CHK_TIMEOUT=300
 if [ ! -f /tmp/rocm_driver ]; then
-  DRIVERS="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V)"
+  DRIVERS="$(wget -qO- https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V)"
   echo -n "$(echo "$DRIVERS" | awk -F "-" '{print $2}' | sort -V | tail -10)" > /tmp/rocm_driver
 else
   FILETIME=$(stat /tmp/rocm_driver -c %Y)
   DIFF=$(expr $CURENTTIME - $FILETIME)
   if [ $DIFF -gt $CHK_TIMEOUT ]; then
-    DRIVERS="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V)"
+    DRIVERS="$(wget -qO- https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V)"
     echo -n "$(echo "$DRIVERS" | awk -F "-" '{print $2}' | sort -V | tail -10)" > /tmp/rocm_driver
   fi
 fi

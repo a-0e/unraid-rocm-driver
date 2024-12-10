@@ -3,7 +3,7 @@
 KERNEL_V="$(uname -r)"
 SET_DRV_V="$(grep 'driver_version' '/boot/config/plugins/rocm-driver/settings.cfg' | cut -d '=' -f2)"
 PACKAGE="rocm"
-DL_URL="https://github.com/yourname/unraid-rocm-driver/releases/download/${KERNEL_V}"
+DL_URL="https://github.com/a-0e/unraid-rocm-driver/releases/download/${KERNEL_V}"
 CUR_V="$(modinfo amdgpu | grep 'version:' | awk '{print $2}')"
 
 download() {
@@ -26,9 +26,9 @@ if [ ! -d "/boot/config/plugins/rocm-driver/packages/${KERNEL_V%%-*}" ]; then
 fi
 
 if [ "${SET_DRV_V}" == "latest" ]; then
-  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | sort -V | tail -1)"
+  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | sort -V | tail -1)"
 else
-  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/yourname/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${SET_DRV_V}" | sort -V | tail -1)"
+  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/a-0e/unraid-rocm-driver/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${SET_DRV_V}" | sort -V | tail -1)"
   if [ -z "${LAT_PACKAGE}" ]; then
     LAT_PACKAGE="${PACKAGE}-${CUR_V}-${KERNEL_V}-1.txz"
   fi
